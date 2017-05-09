@@ -170,7 +170,7 @@ def print_format(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
     click.echo(
-        "{0}[ServerName]{0}Channel = #botchannel{0}Nick = mybotnick{0}Address = irc.example.net{0}Port = 6660{0}IPv4 = True{0}Username = Ircname{0}Password = secret{0}".format(
+        "{0}[ServerName]{0}Channel = #botchannel{0}Nick = mybotnick{0}Address = irc.example.net{0}Port = 6660{0}IPv4 = True{0}Username = Ircname{0}Password = secret{0}Game = ZORK1.DAT{0}".format(
             linesep))
     click.echo('The server name is case sensitive. Option names are not. Any option can be left out and/or supplanted by command line options.')
     click.echo()
