@@ -46,7 +46,7 @@ class ReadThread(threading.Thread):
 
 
 class FrotzBot(irc.bot.SingleServerIRCBot):
-    def __init__(self, channel, nickname, server, port=6667, username=None, password=None, ipv6=False, cmd_trigger='!'):
+    def __init__(self, channel, nickname, server, port=6667, username=None, password=None, ipv6=False, cmd_trigger='!', game = ''):
         self.nickname = nickname
         self.channel = channel
         self.max_nick_len = 9
@@ -54,6 +54,7 @@ class FrotzBot(irc.bot.SingleServerIRCBot):
         self.read_thread = None
         self.q = None
         self.proc = None
+        self.game = game
         factory = irc.connection.Factory(ipv6=ipv6)
         irc.bot.SingleServerIRCBot.__init__(self, [(server, port, password)],
                                             username, username, connect_factory=factory)
@@ -65,7 +66,7 @@ class FrotzBot(irc.bot.SingleServerIRCBot):
         self.die()
 
     def start_game(self, c):
-        self.proc = subprocess.Popen(['./dfrotz', '-h', '200', '-w', '120', 'HITCHHIK.DAT'], stdin=subprocess.PIPE,
+        self.proc = subprocess.Popen(['./dfrotz', '-h', '200', '-w', '120', self.game], stdin=subprocess.PIPE,
                                      stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, shell=False,
                                      universal_newlines=True, bufsize=0)
         self.q = Queue()
@@ -147,8 +148,8 @@ class FrotzBot(irc.bot.SingleServerIRCBot):
 
 
 class App():
-    def __init__(self, channel, nick, server, port, ipv6, username, password):
-        self.bot = FrotzBot(channel, nick, server, port, username, password, ipv6)
+    def __init__(self, channel, nick, server, port, ipv6, username, password, game):
+        self.bot = FrotzBot(channel, nick, server, port, username, password, ipv6, '!', game)
 
     def run(self):
         self.bot.start()
@@ -201,7 +202,8 @@ def cli():
 @click.option('--ipv6', '-6', is_flag=True, help="Use if the server's address is IPv6.")
 @click.option('--username', '-u', help="The bot's IRC username.")
 @click.option('--password', '-w', help="The bot's IRC server password.")
-def start(workdir, pidfile, user, group, detach, file, channel, nick, server, port, ipv6, username, password):
+@click.option('--game', '-g', type=click.Path(exists=True), help="The game data file.")
+def start(workdir, pidfile, user, group, detach, file, channel, nick, server, port, ipv6, username, password, game):
     if file is not None:
         cf = configparser.ConfigParser()
         cf.read(file)
@@ -213,11 +215,12 @@ def start(workdir, pidfile, user, group, detach, file, channel, nick, server, po
         section = cf[server]
         channel = channel or section.get('Channel', None)
         nick = nick or section.get('Nick', None)
-        server = server or section.get('Address', None)
+        server = section.get('Address', None)
         port = port or section.getint("Port", port)
         ipv6 = ipv6 or section.getboolean('IPv6', False)
         username = username or section.get('Username', None)
         password = password or section.get('Password', None)
+        game = game or section.get('Game', None)
 
     if user is not None:
         user = getpwnam(user).pw_uid
@@ -233,7 +236,7 @@ def start(workdir, pidfile, user, group, detach, file, channel, nick, server, po
     )
 
     click.echo('Connecting to server %s (%s) as %s...' % (server, port, nick))
-    app = App(channel, nick, server, port, ipv6, username, password)
+    app = App(channel, nick, server, port, ipv6, username, password, game)
     daemon.worker = app.run
     daemon.shutdown_callback = app.shutdown
     try:
