@@ -213,7 +213,7 @@ def start(workdir, pidfile, user, group, detach, file, channel, nick, server, po
         section = cf[server]
         channel = channel or section.get('Channel', None)
         nick = nick or section.get('Nick', None)
-        server = server or section.get('Address', None)
+        server = section.get('Address', None)
         port = port or section.getint("Port", port)
         ipv6 = ipv6 or section.getboolean('IPv6', False)
         username = username or section.get('Username', None)
